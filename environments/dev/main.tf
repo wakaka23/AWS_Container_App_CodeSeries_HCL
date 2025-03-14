@@ -28,3 +28,48 @@ module "ecr" {
   source = "../../modules/ecr"
   common = local.common
 }
+
+module "alb_internal" {
+  source  = "../../modules/alb_internal"
+  common  = local.common
+  network = module.network
+}
+
+module "ecs_backend" {
+  source          = "../../modules/ecs_backend"
+  common          = local.common
+  network         = module.network
+  alb_internal    = module.alb_internal
+  secrets_manager = module.secrets_manager
+  ecr_repository  = module.ecr
+  code_pipeline   = var.code_pipeline
+}
+
+module "secrets_manager" {
+  source = "../../modules/secrets_manager"
+  common = local.common
+  db     = var.db
+  rds    = module.rds
+}
+
+module "rds" {
+  source  = "../../modules/rds"
+  common  = local.common
+  network = module.network
+  db      = var.db
+}
+
+module "alb_ingress" {
+  source  = "../../modules/alb_ingress"
+  common  = local.common
+  network = module.network
+}
+
+module "ecs_frontend" {
+  source          = "../../modules/ecs_frontend"
+  common          = local.common
+  network         = module.network
+  alb_ingress     = module.alb_ingress
+  alb_internal    = module.alb_internal
+  secrets_manager = module.secrets_manager
+}
