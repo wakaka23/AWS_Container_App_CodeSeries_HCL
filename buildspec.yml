@@ -1,0 +1,33 @@
+# This file is used by AWS CodeBuild to build and push the Docker image to Amazon ECR
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo "Login to Amazon ECR"
+      - aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
+      - echo "Login to Docker Hub"
+      - docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
+      - echo "Get commit hash"
+      - IMAGE_TAG=$(echo ${CODEBUILD_RESOLVED_SOURCE_VERSION} | cut -c 1-7)
+  build:
+    commands:
+      - echo "Build Docker image"
+      - docker build -f ./backend_app/Dockerfile -t ${REPOSITORY_URI}:${IMAGE_TAG} ./backend_app
+  post_build:
+    commands:
+      - echo "Push Docker image to Amazon ECR"
+      - docker push "${REPOSITORY_URI}:${IMAGE_TAG}"
+      - printf '{"Version":"1.0","ImageURI":"%s"}' ${REPOSITORY_URI}:${IMAGE_TAG} > imageDetail.json
+      - echo "Create new revision of the task definition"
+      - sed -ie "s#<TASK_FAMILY>#${TASK_FAMILY}#" taskdef.json
+      - sed -ie "s#<TASK_EXECUTION_ROLE_ARN>#${TASK_EXECUTION_ROLE_ARN}#" taskdef.json
+      - sed -ie "s#<SECRETS_FOR_DB_ARN>#${SECRETS_FOR_DB_ARN}#" taskdef.json
+      - sed -ie "s#<REGION>#${REGION}#" taskdef.json
+      - sed -ie "s#<LOG_GROUP_NAME>#${LOG_GROUP_NAME}#" taskdef.json
+      - echo "$(cat taskdef.json)"
+artifacts:
+  files:
+    - imageDetail.json
+    - taskdef.json
+    - appspec.yml
