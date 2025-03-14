@@ -199,6 +199,7 @@ resource "aws_codepipeline" "backend" {
         ConnectionArn    = data.aws_codestarconnections_connection.github.arn
         FullRepositoryId = "${var.code_pipeline.github_repository_owner}/${var.code_pipeline.github_repository_name}"
         BranchName       = var.code_pipeline.github_repository_branch_name
+        DetectChanges    = false
       }
     }
   }
