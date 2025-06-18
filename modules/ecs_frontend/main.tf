@@ -68,7 +68,7 @@ resource "aws_ecs_cluster" "frontend" {
   name = "${var.common.env}-frontend-cluster"
   setting {
     name  = "containerInsights"
-    value = "enabled"
+    value = "enhanced"
   }
 }
 
