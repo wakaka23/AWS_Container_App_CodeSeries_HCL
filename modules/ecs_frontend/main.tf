@@ -10,6 +10,7 @@ resource "aws_ecs_task_definition" "frontend" {
   memory                   = 1024
   network_mode             = "awsvpc"
   execution_role_arn       = aws_iam_role.task_execution_role.arn
+  task_role_arn            = aws_iam_role.task_role.arn
   container_definitions = jsonencode([
     {
       name      = "app"
@@ -50,7 +51,7 @@ resource "aws_ecs_task_definition" "frontend" {
         }
       ]
       portMappings = [{ containerPort = 80 }]
-      "readonlyRootFilesystem" : true
+      "readonlyRootFilesystem" : false
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -83,6 +84,7 @@ resource "aws_ecs_service" "frontend" {
   desired_count                      = 2
   deployment_minimum_healthy_percent = 100
   deployment_maximum_percent         = 200
+  enable_execute_command = true
   deployment_controller {
     type = "ECS"
   }
@@ -138,6 +140,31 @@ resource "aws_iam_role_policy_attachment" "task_execution_role" {
     secretsmanager = aws_iam_policy.policy_for_access_to_secrets_manager.arn
   }
   role       = aws_iam_role.task_execution_role.name
+  policy_arn = each.value
+}
+
+# Define TaskRole for ECS
+resource "aws_iam_role" "task_role" {
+  name               = "${var.common.env}-frontend-task-role"
+  assume_role_policy = data.aws_iam_policy_document.trust_policy_for_task_role.json
+}
+
+data "aws_iam_policy_document" "trust_policy_for_task_role" {
+  statement {
+    effect = "Allow"
+    principals {
+      type        = "Service"
+      identifiers = ["ecs-tasks.amazonaws.com"]
+    }
+    actions = ["sts:AssumeRole"]
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "policy_management" {
+  for_each = {
+    ssm = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+  }
+  role       = aws_iam_role.task_role.name
   policy_arn = each.value
 }
 
