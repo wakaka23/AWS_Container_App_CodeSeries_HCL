@@ -22,6 +22,7 @@ phases:
       - echo "Create new revision of the task definition"
       - sed -ie "s#<TASK_FAMILY>#${TASK_FAMILY}#" taskdef.json
       - sed -ie "s#<TASK_EXECUTION_ROLE_ARN>#${TASK_EXECUTION_ROLE_ARN}#" taskdef.json
+      - sed -ie "s#<TASK_ROLE_ARN>#${TASK_ROLE_ARN}#" taskdef.json
       - sed -ie "s#<SECRETS_FOR_DB_ARN>#${SECRETS_FOR_DB_ARN}#" taskdef.json
       - sed -ie "s#<REGION>#${REGION}#" taskdef.json
       - sed -ie "s#<LOG_GROUP_NAME>#${LOG_GROUP_NAME}#" taskdef.json

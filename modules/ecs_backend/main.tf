@@ -384,6 +384,10 @@ resource "aws_codebuild_project" "backend" {
       value = aws_iam_role.task_execution_role.arn
     }
     environment_variable {
+      name = "TASK_ROLE_ARN"
+      value = aws_iam_role.task_role.arn
+    }
+    environment_variable {
       name  = "SECRETS_FOR_DB_ARN"
       value = var.secrets_manager.secret_for_db_arn
     }
